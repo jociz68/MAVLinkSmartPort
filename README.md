@@ -7,6 +7,7 @@ FrSky smart port is connected to a digital pin that SoftwareSerial drives.
 Besides MAVLink, Arduino provides 2 temperatures for smart port. Temperature is measured with NTC termistors.
 MAVLink and temperatures are displayed on FrSky Taranis LCD using Lua scripts.      
 There is a schematic drawing of Arduino pins, NTC termistors, MAVLink and smart port.
+There are some Arduino boards (for instance NANO) having the UART RX pin connected to USB-serial chip with 1k resistor.
+This resistor must be removed so that Arduino RX pin can be used. 
+Otherwise this RX pin is continuously driven by USB chip which would prevent the MAVLink serial communication.      
 
-
- 
