@@ -121,6 +121,7 @@ function initialize()
     AsciiMap[24] ="X"
     AsciiMap[25] ="Y"
     AsciiMap[26] ="Z"
+	
 end
 
 initialize()
@@ -465,7 +466,7 @@ local function drawToHomeHud(x, y)
 end
 
 
-local function drawTopPanel()
+function drawTopPanel()
     lcd.drawFilledRectangle(0, 0, 212, 9, 0)
 
     local flightModeNumber = getValue("fuel") + 1

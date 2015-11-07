@@ -11,7 +11,8 @@
 --
 --  A copy of the GNU General Public License is available at <http://www.gnu.org/licenses/>.
 
-local tempMaxPoints = 90
+-- becuase of memory restriction, a few temperature values are stored
+local tempMaxPoints = 30
 local lastTime = 0
 local maxTemp = 0
 local minTemp = 0
@@ -19,7 +20,7 @@ local minTemp = 0
 -- Position (0,0) is at top left. Y axis is negative, top line is 0, bottom line is 63.
 local yAxisHeight = 50
 local xAxisWidth = 90
-local yStartPos = 5
+local yStartPos = 10
 local xStartPos = 25
 local motorTemp = 0
 local escTemp = 0
@@ -54,43 +55,52 @@ local function readMaxMinTemp()
 end
 
 local function drawMotorTemp()
-	lcd.drawText(xStartPos,     1,"Motor temp: "  , SMLSIZE)
-	lcd.drawText(60 + xStartPos,     1,motorTemp  , SMLSIZE)
+	lcd.drawText(xStartPos,     1,"Motor: "  , SMLSIZE)
+	lcd.drawText(lcd.getLastPos(),     1,motorTemp  , SMLSIZE)
+	lcd.drawText(xStartPos + 52,     1,"max: "  , SMLSIZE)
+	lcd.drawText(lcd.getLastPos(),     1,getValue("temp1-max")  , SMLSIZE)
 	local yPos = 0
 	local yScale = yAxisHeight / (maxTemp - minTemp)
-	for i=0,tempMaxPoints-1 do
-		yPos = yStartPos + yAxisHeight + minTemp * yScale -  temp1[i] * yScale
+	local tempIndex = 0
+	for i=0,xAxisWidth - 1 do
+		tempIndex = math.floor(i / 3)
+		yPos = yStartPos + yAxisHeight + minTemp * yScale -  temp1[tempIndex] * yScale
 		lcd.drawLine(xStartPos + i, yStartPos + yAxisHeight, xStartPos + i, yPos, SOLID, GREY_DEFAULT)
 		lcd.drawPoint(xStartPos + i, yPos, SOLID, FORCE)
 	end
 end
 
 local function drawEscTemp()
-	lcd.drawText(100 + xStartPos,     1,"ESC temp: "  , SMLSIZE)
-	lcd.drawText(150 + xStartPos,     1,escTemp  , SMLSIZE)
+	lcd.drawText(100 + xStartPos,     1,"ESC: "  , SMLSIZE)
+	lcd.drawText(lcd.getLastPos(),     1,escTemp  , SMLSIZE)
+	lcd.drawText(100 + xStartPos + 40,     1," max: "  , SMLSIZE)
+	lcd.drawText(lcd.getLastPos(),     1,getValue("temp2-max")  , SMLSIZE)
 	local yPos = 0
 	local xPos = 0
 	local yScale = yAxisHeight / (maxTemp - minTemp)
-	for i=0,tempMaxPoints-1 do
-		xPos = xStartPos + tempMaxPoints + 5 + i
-		yPos = yStartPos + yAxisHeight + minTemp * yScale -  temp2[i] * yScale
+	local tempIndex = 0
+	for i=0,xAxisWidth - 1 do
+		tempIndex = math.floor(i / 3) 
+		xPos = xStartPos + xAxisWidth + 5 + i
+		yPos = yStartPos + yAxisHeight + minTemp * yScale -  temp2[tempIndex] * yScale
 		lcd.drawLine(xPos, yStartPos + yAxisHeight, xPos, yPos, SOLID, GREY_DEFAULT)
 		lcd.drawPoint(xPos, yPos, SOLID, FORCE)
 	end
 end
 
 local function drawYaxis()
-	lcd.drawText(1, yStartPos + yAxisHeight , minTemp , SMLSIZE)
+	lcd.drawText(1, 1 , "Temp" , SMLSIZE)
+	lcd.drawText(1, yStartPos + yAxisHeight - 5 , minTemp , SMLSIZE)
 	lcd.drawText(1, yStartPos + yAxisHeight / 2 - 2, maxTemp - (maxTemp - minTemp) / 2, SMLSIZE)
 	lcd.drawText(1, yStartPos , maxTemp , SMLSIZE)
 end
 local function background()
 	local currtime = getTime()
-	if currtime > (lastTime + 100) then
+	if currtime > (lastTime + 300) then
 		readTemp()
 		lastTime = currtime
 		-- shift graph left
-		for i=0,tempMaxPoints-2 do
+		for i=0,tempMaxPoints - 2 do
 			temp1[i] = temp1[i + 1]
 			temp2[i] = temp2[i + 1]
 		end

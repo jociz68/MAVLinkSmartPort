@@ -1,6 +1,3 @@
---
---  Copyright (c) Scott Simpson
---
 -- 	This program is free software: you can redistribute it and/or modify
 --  it under the terms of the GNU General Public License as published by
 --  the Free Software Foundation, either version 3 of the License, or
@@ -12,58 +9,69 @@
 --  GNU General Public License for more details.
 --
 --  A copy of the GNU General Public License is available at <http://www.gnu.org/licenses/>.
+--
+
+BatteryCapacity={}
+local lastTime = 0
+
+BatteryCapacity[-1024] = 2200
+BatteryCapacity[0] = 4000
+BatteryCapacity[1024] = 0
 
 initialize()
-            
----------------------------------------------------------------------------------------------------      
-			
-local function drawTopPanel()
-    lcd.drawFilledRectangle(0, 0, 212, 9, 0)
-  
-    local flightModeNumber = getValue("fuel") + 1
-    if flightModeNumber < 1 or flightModeNumber > 17 then
-        flightModeNumber = 13
-    end
 
-    lcd.drawText(1, 1, FlightMode[flightModeNumber].Name, INVERS)
-
-    lcd.drawTimer(lcd.getLastPos() + 10, 1, model.getTimer(0).value, INVERS)
-
-    lcd.drawText(lcd.getLastPos() + 10, 1, "TX:", INVERS)
-    lcd.drawNumber(lcd.getLastPos() + 16, 1, getValue("tx-voltage")*10, 0+PREC1+INVERS)
-
-    lcd.drawText(lcd.getLastPos(), 1, "v", INVERS)
-
-    lcd.drawText(lcd.getLastPos() + 12, 1, "rssi:", INVERS)
-    lcd.drawNumber(lcd.getLastPos() + 10, 1, getValue("rssi"), 0+INVERS)
-end
-
-local function drawBottomPanel()
-    local footerMessage = getTextMessage()
-    lcd.drawFilledRectangle(0, 54, 212, 63, 0)
-    lcd.drawText(2, 55, footerMessage, INVERS)
-end
-    
-local function background() 
+local function background()
 end
 
 local function run(event)
-    local loopStartTime = getTime()
-    if loopStartTime > (lastTime + 100) then
-        checkForNewMessage()
-        lastTime = loopStartTime
-    end 
-    checkForNewMessage()
-    
     lcd.clear()
-    drawTopPanel()
-    local i
-    local row = 1
-    for i = messageFirst, messageNext - 1, 1 do
---            lcd.drawText(1, row * 10 + 2, "abc " .. i .. " " .. messageFirst .. " " .. messageNext, 0)
-        lcd.drawText(1, row * 10 + 2, messageArray[(i % MESSAGEBUFFERSIZE) + 1], 0)
-        row = row + 1
-    end
+    checkForNewMessage()
+	drawTopPanel()
+	lcd.drawText(5, 11, "CNSP", SMLSIZE) 
+	lcd.drawChannel(80, 11, "consumption", DBLSIZE)
+	
+	lcd.drawText(5, 30, "CUR", SMLSIZE)
+	lcd.drawChannel(80, 30, "current", MIDSIZE)
+	
+	lcd.drawText(130, 14, "Batt Volt", SMLSIZE)
+	lcd.drawChannel(205, 11, "vfas", DBLSIZE)
+	lcd.drawText(130, 30, "MINIMUM", SMLSIZE)
+	lcd.drawChannel(182, 30, "vfas-min", LEFT)
+	
+	local scValue = getValue("sc")
+	local consumption = getValue("consumption")
+	local remainPctBattcap = 0
+	local batteryCapacity = 0
+	batteryCapacity = BatteryCapacity[scValue]
+	if batteryCapacity == 0 then
+		batteryCapacity = getValue("rs") * 10
+	end
+	if batteryCapacity ~= 0 then
+		remainPctBattcap = 100 - 100 * consumption / batteryCapacity
+	end
+	local doBlink = 0
+	if remainPctBattcap < 20 then
+		doBlink = BLINK
+	end
+	if remainPctBattcap < 60 then
+		local loopStartTime = getTime()
+		if loopStartTime > (lastTime + 20 * 100) then
+			playNumber(remainPctBattcap, 8, 0)
+			lastTime = loopStartTime
+			if remainPctBattcap < 20 then
+				playFile("/SOUNDS/en/lowbat.wav")
+			end
+		end 
+		
+	end
+	lcd.drawText(5, 50, "Batt", SMLSIZE)
+	lcd.drawNumber(80, 45	,batteryCapacity,DBLSIZE)
+	lcd.drawText(lcd.getLastPos(), 45, "mAh",0)
+	
+	lcd.drawText(110, 46, "Battery", doBlink + MIDSIZE)
+	lcd.drawNumber(170, 43, remainPctBattcap, LEFT+DBLSIZE)
+	lcd.drawText(lcd.getLastPos(), 44, "%", MIDSIZE)
+	lcd.drawGauge(100, 38, 110, 25, remainPctBattcap, 100)
 end
 
 return {run=run, background=background}
